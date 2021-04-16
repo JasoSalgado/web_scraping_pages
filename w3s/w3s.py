@@ -2,7 +2,7 @@
 Extract title from two pages, which are inside of a iframe
 """
 
-#Modules
+# Modules
 from scrapy.item import Field
 from scrapy.item import Item
 from scrapy.spiders import CrawlSpider
@@ -10,9 +10,18 @@ from scrapy.selector import Selector
 from scrapy.loader import ItemLoader
 from scrapy import Request
 
+
 class Dummy(Item):
     title = Field()
     title_iframe = Field()
+
+
+def parse_iframe(response):
+    item = ItemLoader(Dummy(), response)
+    item.add_xpath('titulo_iframe', '//div[@id="main"]//h1/span/text()')
+    item.add_value('title', response.meta.get('title'))
+
+    yield item.load_item()
 
 
 class W3SCrawler(CrawlSpider):
@@ -38,15 +47,7 @@ class W3SCrawler(CrawlSpider):
         iframe_url = "https://www.w3schools.com/html/" + iframe_url
 
         yield Request(
-            iframe_url, # iframe´s urls
-            callback = self.parse_iframe, # function inside the class that is going to process the iframe
-            meta = previous_data
+            iframe_url,  # iframe´s urls
+            callback=parse_iframe,  # function inside the class that is going to process the iframe
+            meta=previous_data
         )
-
-
-    def parse_iframe(self, response):
-        item = ItemLoader(Dummy(), response)
-        item.add_xpath('titulo_iframe', '//div[@id="main"]//h1/span/text()')
-        item.add_value('title', response.meta.get('title'))
-
-        yield item.load_item()
